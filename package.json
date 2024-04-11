@@ -1,7 +1,7 @@
 {
   "scripts": {
     "dev": "bun run --hot src/index.ts",
-    "start": "bun run src/index.ts"
+    "start": "bun src/scripts/sync.ts && bun run src/index.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.6.0",
