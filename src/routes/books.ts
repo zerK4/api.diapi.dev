@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 import { db } from "../db";
-import { eq } from "drizzle-orm";
-import { ContentType, apiKeys, contents } from "../db/schema";
+import { ContentType, contents } from "../db/schema";
 import { getAllBooks, getBookById } from "../utils/api/books/getters";
 
 const app = new Hono();
@@ -10,21 +9,7 @@ app.get("/all", async (ctx) => {
   const { key: searchKey, value } = ctx.req.query();
   const key = ctx.req.path.split("/")[4];
 
-  const apiKey = await db.query.apiKeys.findFirst({
-    where: eq(apiKeys.key, key),
-    with: {
-      content: true,
-    },
-  });
-
-  if (!apiKey) {
-    ctx.status(404);
-    return ctx.json({ message: "Not found", content: null });
-  }
-
-  const content = (await db.query.contents.findFirst({
-    where: eq(contents.id, apiKey?.content.id),
-  })) as ContentType;
+  const content = await getAllBooks(key);
 
   if (!content) {
     ctx.status(404);
@@ -38,8 +23,8 @@ app.get("/all", async (ctx) => {
     });
   }
 
-  if (Array.isArray(content.content)) {
-    const data = content.content
+  if (Array.isArray(content)) {
+    const data = content
       .map((item) => {
         if (String(item[searchKey]).toLowerCase() !== value.toLowerCase())
           return null;
@@ -47,8 +32,6 @@ app.get("/all", async (ctx) => {
         return item;
       })
       .filter((item) => item !== null);
-
-    console.log(data, content, "the data");
 
     return ctx.json({
       message: "Content fetched successfully.",
@@ -118,6 +101,16 @@ app.put("/:id", async (ctx) => {
   }
 
   return ctx.json({ message: "Not found", data });
+});
+
+app.post("/", async (ctx) => {
+  const key = ctx.req.path.split("/")[4];
+  const { key: searchKey, value } = await ctx.req.json();
+  const data = await getAllBooks(key);
+
+  return ctx.json({
+    message: "Content fetched successfully.",
+  });
 });
 
 export default app;
