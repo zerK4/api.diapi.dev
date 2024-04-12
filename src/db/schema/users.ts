@@ -11,6 +11,8 @@ export const users = sqliteTable("users", {
     .$defaultFn(() => v4()),
   name: text("name").notNull(),
   email: text("email").notNull(),
+  databaseName: text("database_name"),
+  databaseToken: text("database_token"),
   token: text("token"),
   createdAt: integer("created_at").$defaultFn(() => Date.now()),
   updatedAt: integer("updated_at"),

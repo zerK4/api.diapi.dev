@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../../../db";
 import { apiKeys, contents } from "../../../db/schema";
 
-export async function getBookById({
+export async function getContentById({
   bookId,
   apiKey,
 }: {
@@ -10,7 +10,7 @@ export async function getBookById({
   apiKey: string;
 }) {
   try {
-    const books = await getAllBooks(apiKey);
+    const books = await getBook(apiKey);
 
     if (Array.isArray(books)) {
       return books.find((book) => book.id === bookId) || null;
@@ -24,7 +24,7 @@ export async function getBookById({
   }
 }
 
-export async function getAllBooks(apiKey: string) {
+export async function getBook(apiKey: string) {
   try {
     const keyContent = await db.query.apiKeys.findFirst({
       where: eq(apiKeys.key, apiKey),

@@ -1,7 +1,8 @@
 import { Hono } from "hono";
 import { db } from "../db";
-import { ContentType, contents } from "../db/schema";
-import { getAllBooks, getBookById } from "../utils/api/books/getters";
+import { ContentType, apiKeys, contents } from "../db/schema";
+import { getBook, getContentById } from "../utils/api/books/getters";
+import { eq } from "drizzle-orm";
 
 const app = new Hono();
 
@@ -9,7 +10,7 @@ app.get("/all", async (ctx) => {
   const { key: searchKey, value } = ctx.req.query();
   const key = ctx.req.path.split("/")[4];
 
-  const content = await getAllBooks(key);
+  const content = await getBook(key);
 
   if (!content) {
     ctx.status(404);
@@ -47,7 +48,7 @@ app.get("/all", async (ctx) => {
 app.get("/:id", async (ctx) => {
   const { id } = ctx.req.param();
   const key = ctx.req.path.split("/")[4];
-  const book = await getBookById({
+  const book = await getContentById({
     bookId: id,
     apiKey: key,
   });
@@ -69,7 +70,7 @@ app.put("/:id", async (ctx) => {
     return ctx.json({ message: "Invalid data" });
   }
 
-  const allBooks = await getAllBooks(key);
+  const allBooks = await getBook(key);
 
   if (!allBooks) return ctx.json({ message: "Not found" });
 
@@ -87,7 +88,7 @@ app.put("/:id", async (ctx) => {
     if (!book)
       return ctx.json({
         message: "Not found",
-        data: null,
+        content: null,
       });
 
     await db.update(contents).set({
@@ -96,7 +97,7 @@ app.put("/:id", async (ctx) => {
 
     return ctx.json({
       message: "Content updated successfully.",
-      data: data,
+      content: book,
     });
   }
 
@@ -105,11 +106,54 @@ app.put("/:id", async (ctx) => {
 
 app.post("/", async (ctx) => {
   const key = ctx.req.path.split("/")[4];
-  const { key: searchKey, value } = await ctx.req.json();
-  const data = await getAllBooks(key);
+  const { clear, data } = await ctx.req.json();
+  const currentBook = await getBook(key);
+  const currentKey = await db.query.apiKeys.findFirst({
+    where: eq(apiKeys.key, key),
+    with: {
+      content: true,
+    },
+  });
+
+  if (!currentBook || !currentKey) return ctx.json({ message: "Not found" });
+
+  if (clear) {
+    const [updated] = await db
+      .update(contents)
+      .set({
+        content: data,
+      })
+      .where(eq(contents.id, currentKey.contentId))
+      .returning();
+
+    return ctx.json({
+      content: updated.content,
+      message: "Content updated successfully.",
+    });
+  }
+
+  if (Array.isArray(currentBook)) {
+    if (Array.isArray(data)) {
+      currentBook.push(...data);
+    } else {
+      currentBook.push(data);
+    }
+
+    const [updated] = await db
+      .update(contents)
+      .set({ content: currentBook })
+      .where(eq(contents.id, currentKey.contentId))
+      .returning();
+
+    return ctx.json({
+      content: updated.content,
+      message: "Content updated successfully.",
+    });
+  }
 
   return ctx.json({
     message: "Content fetched successfully.",
+    content: [],
   });
 });
 
