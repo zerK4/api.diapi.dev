@@ -8,9 +8,9 @@ import { user } from "./utils/api/user/config";
 const app = new Hono();
 
 app.get("/:id", async (ctx) => {
-  const { id } = ctx.req.param();
+  // const { id } = ctx.req.param();
 
-  const db = await user(id).getUserDb(id);
+  // const db = await user(id).getUserDb(id);
 
   return ctx.text("Hello Hono!");
 });
@@ -18,6 +18,6 @@ app.get("/:id", async (ctx) => {
 app.use(cors());
 app.route("api/v1/books/*", booksRoutes);
 // app.route("/api/v1/auth/register", registerRoutes);
-// app.route("/api/v1/config/sync", syncRoute);
+app.route("/api/v1/config/sync", syncRoute);
 
 export default app;

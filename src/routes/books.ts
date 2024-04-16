@@ -116,7 +116,7 @@ app.post("/", async (ctx) => {
   });
 
   if (!currentBook || !currentKey) return ctx.json({ message: "Not found" });
-
+  console.log(clear, data, "this is req");
   if (clear) {
     const [updated] = await db
       .update(contents)
