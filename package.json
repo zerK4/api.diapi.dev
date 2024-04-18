@@ -15,7 +15,7 @@
     "@tursodatabase/api": "^1.4.0",
     "@types/uuid": "^9.0.8",
     "drizzle-orm": "^0.30.7",
-    "hono": "^4.2.3",
+    "hono": "^4.2.5",
     "prettier": "^3.2.5",
     "uuid": "^9.0.1"
   },
