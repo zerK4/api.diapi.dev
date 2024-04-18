@@ -1,7 +1,9 @@
 {
   "scripts": {
     "dev": "bun run --hot src/index.ts",
-    "start": "bun run src/index.ts && bun src/scripts/sync.ts",
+    "start": "bun run src/index.ts && bun run start:sync",
+    "start:sync": "bun src/scripts/sync.ts",
+    "build": "bun build src/index.ts",
     "format": "prettier --write .",
     "turso:local": "npx turso dev --db-file database.db",
     "push:db": "npx drizzle-kit push:sqlite",
