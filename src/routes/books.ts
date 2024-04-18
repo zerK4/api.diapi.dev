@@ -10,7 +10,7 @@ app.get("/all", async (ctx) => {
   const { key: searchKey, value } = ctx.req.query();
   const key = ctx.req.path.split("/")[4];
 
-  const content = await getBook(key);
+  const { content } = await getBook(key);
 
   if (!content) {
     ctx.status(404);
@@ -27,7 +27,10 @@ app.get("/all", async (ctx) => {
   if (Array.isArray(content)) {
     const data = content
       .map((item) => {
-        if (String(item[searchKey]).toLowerCase() !== value.toLowerCase())
+        if (
+          String(item[searchKey as keyof typeof item]).toLowerCase() !==
+          value.toLowerCase()
+        )
           return null;
 
         return item;
@@ -70,14 +73,14 @@ app.put("/:id", async (ctx) => {
     return ctx.json({ message: "Invalid data" });
   }
 
-  const allBooks = await getBook(key);
+  const { content, contentId } = await getBook(key);
 
-  if (!allBooks) return ctx.json({ message: "Not found" });
+  if (!content) return ctx.json({ message: "Not found" });
 
-  if (Array.isArray(allBooks)) {
-    const book = allBooks.find((book) => book.id === id);
-    book[searchKey] = value;
-    data = allBooks.map((x) => {
+  if (Array.isArray(content)) {
+    const book = content.find((book) => book.id === id);
+    content[searchKey] = value;
+    data = content.map((x) => {
       if (x.id === id) {
         return book;
       }
@@ -109,7 +112,7 @@ app.put("/:id", async (ctx) => {
 app.post("/", async (ctx) => {
   const key = ctx.req.path.split("/")[4];
   const { clear, data } = await ctx.req.json();
-  const currentBook = await getBook(key);
+  const { content } = await getBook(key);
   const currentKey = await db.query.apiKeys.findFirst({
     where: eq(apiKeys.key, key),
     with: {
@@ -117,7 +120,7 @@ app.post("/", async (ctx) => {
     },
   });
 
-  if (!currentBook || !currentKey) return ctx.json({ message: "Not found" });
+  if (!content || !currentKey) return ctx.json({ message: "Not found" });
   console.log(clear, data, "this is req");
   if (clear) {
     const [updated] = await db
@@ -136,16 +139,16 @@ app.post("/", async (ctx) => {
     });
   }
 
-  if (Array.isArray(currentBook)) {
+  if (Array.isArray(content)) {
     if (Array.isArray(data)) {
-      currentBook.push(...data);
+      content.push(...data);
     } else {
-      currentBook.push(data);
+      content.push(data);
     }
 
     const [updated] = await db
       .update(contents)
-      .set({ content: currentBook })
+      .set({ content: content })
       .where(eq(contents.id, currentKey.contentId))
       .returning();
 
@@ -161,6 +164,35 @@ app.post("/", async (ctx) => {
     message: "Content fetched successfully.",
     content: [],
   });
+});
+
+app.delete("/:id", async (ctx) => {
+  try {
+    const { id } = ctx.req.param();
+    const key = ctx.req.path.split("/")[4];
+
+    if (!id) return ctx.json({ message: "Invalid data" });
+
+    const { content, contentId } = await getBook(key);
+
+    if (!content || !contentId) return ctx.json({ message: "Not found" });
+
+    if (Array.isArray(content)) {
+      const data = content.filter((item) => item.id !== id);
+
+      await db
+        .update(contents)
+        .set({ content: data })
+        .where(eq(contents.id, contentId))
+        .returning();
+    }
+
+    return ctx.json({ message: "Content deleted successfully." });
+  } catch (err) {
+    console.log(err);
+
+    throw err;
+  }
 });
 
 export default app;

@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "../../../db";
-import { apiKeys, contents } from "../../../db/schema";
+import { ContentType, apiKeys, contents } from "../../../db/schema";
 
 export async function getContentById({
   bookId,
@@ -24,7 +24,11 @@ export async function getContentById({
   }
 }
 
-export async function getBook(apiKey: string) {
+export async function getBook(apiKey: string): Promise<{
+  content: ContentType[] | null;
+  contentId: string | null;
+  err?: any;
+}> {
   try {
     const keyContent = await db.query.apiKeys.findFirst({
       where: eq(apiKeys.key, apiKey),
@@ -33,7 +37,11 @@ export async function getBook(apiKey: string) {
       },
     });
 
-    if (!keyContent) return null;
+    if (!keyContent)
+      return {
+        content: null,
+        contentId: null,
+      };
 
     const books = await db.query.contents.findFirst({
       where: eq(contents.id, keyContent.contentId),
@@ -43,12 +51,23 @@ export async function getBook(apiKey: string) {
       },
     });
 
-    if (!books) return null;
+    if (!books)
+      return {
+        content: null,
+        contentId: null,
+      };
 
-    return books.content;
+    return {
+      content: books.content as ContentType[],
+      contentId: books.id,
+    };
   } catch (error) {
     console.log(error);
 
-    return error;
+    return {
+      content: null,
+      contentId: null,
+      err: error,
+    };
   }
 }
