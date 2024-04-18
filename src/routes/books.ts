@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { db } from "../db";
+import { client, db } from "../db";
 import { ContentType, apiKeys, contents } from "../db/schema";
 import { getBook, getContentById } from "../utils/api/books/getters";
 import { eq } from "drizzle-orm";
@@ -95,6 +95,8 @@ app.put("/:id", async (ctx) => {
       content: data,
     });
 
+    await client.sync();
+
     return ctx.json({
       message: "Content updated successfully.",
       content: book,
@@ -126,6 +128,8 @@ app.post("/", async (ctx) => {
       .where(eq(contents.id, currentKey.contentId))
       .returning();
 
+    await client.sync();
+
     return ctx.json({
       content: updated.content,
       message: "Content updated successfully.",
@@ -144,6 +148,8 @@ app.post("/", async (ctx) => {
       .set({ content: currentBook })
       .where(eq(contents.id, currentKey.contentId))
       .returning();
+
+    await client.sync();
 
     return ctx.json({
       content: updated.content,

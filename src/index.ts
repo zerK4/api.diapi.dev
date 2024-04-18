@@ -1,11 +1,14 @@
 import { Hono } from "hono";
 import booksRoutes from "./routes/books";
 import { cors } from "hono/cors";
-import registerRoutes from "./routes/auth/register";
 import syncRoute from "./routes/config/sync";
-import { user } from "./utils/api/user/config";
+import { bearerAuth } from "hono/bearer-auth";
 
 const app = new Hono();
+
+const token = process.env.SYNC_TOKEN!;
+
+app.use("/api/v1/config/*", bearerAuth({ token }));
 
 app.get("/:id", async (ctx) => {
   // const { id } = ctx.req.param();
