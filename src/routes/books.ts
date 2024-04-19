@@ -3,6 +3,7 @@ import { client, db } from "../db";
 import { ContentType, apiKeys, contents } from "../db/schema";
 import { getBook, getContentById } from "../utils/api/books/getters";
 import { eq } from "drizzle-orm";
+import { registerWrites } from "../utils/api/db/register";
 
 const app = new Hono();
 
@@ -75,7 +76,9 @@ app.put("/:id", async (ctx) => {
 
   const { content, contentId } = await getBook(key);
 
-  if (!content) return ctx.json({ message: "Not found" });
+  if (!content || !contentId) return ctx.json({ message: "Not found" });
+
+  registerWrites(contentId);
 
   if (Array.isArray(content)) {
     const book = content.find((book) => book.id === id);
@@ -112,7 +115,7 @@ app.put("/:id", async (ctx) => {
 app.post("/", async (ctx) => {
   const key = ctx.req.path.split("/")[4];
   const { clear, data } = await ctx.req.json();
-  const { content } = await getBook(key);
+  const { content, contentId } = await getBook(key);
   const currentKey = await db.query.apiKeys.findFirst({
     where: eq(apiKeys.key, key),
     with: {
@@ -120,8 +123,11 @@ app.post("/", async (ctx) => {
     },
   });
 
-  if (!content || !currentKey) return ctx.json({ message: "Not found" });
-  console.log(clear, data, "this is req");
+  if (!content || !contentId || !currentKey)
+    return ctx.json({ message: "Not found" });
+
+  registerWrites(contentId);
+
   if (clear) {
     const [updated] = await db
       .update(contents)
@@ -176,6 +182,8 @@ app.delete("/:id", async (ctx) => {
     const { content, contentId } = await getBook(key);
 
     if (!content || !contentId) return ctx.json({ message: "Not found" });
+
+    registerWrites(contentId);
 
     if (Array.isArray(content)) {
       const data = content.filter((item) => item.id !== id);

@@ -11,7 +11,7 @@ const token = process.env.SYNC_TOKEN!;
 app.use("/api/v1/config/*", bearerAuth({ token }));
 
 app.get("/:id", async (ctx) => {
-  // const { id } = ctx.req.param();
+  // const { id } = ctx.req.param();)
 
   // const db = await user(id).getUserDb(id);
 

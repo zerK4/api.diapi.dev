@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { db } from "../../../db";
 import { ContentType, apiKeys, contents } from "../../../db/schema";
+import { registerReads } from "../db/register";
 
 export async function getContentById({
   bookId,
@@ -42,6 +43,8 @@ export async function getBook(apiKey: string): Promise<{
         content: null,
         contentId: null,
       };
+
+    registerReads(keyContent?.content.id);
 
     const books = await db.query.contents.findFirst({
       where: eq(contents.id, keyContent.contentId),
