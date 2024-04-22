@@ -13,8 +13,8 @@ export async function getContentById({
   try {
     const books = await getBook(apiKey);
 
-    if (Array.isArray(books)) {
-      return books.find((book) => book.id === bookId) || null;
+    if (Array.isArray(books.content)) {
+      return books.content?.find((book) => book.id === bookId) || null;
     }
 
     return null;

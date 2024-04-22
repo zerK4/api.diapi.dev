@@ -4,6 +4,7 @@ import { ContentType, apiKeys, contents } from "../db/schema";
 import { getBook, getContentById } from "../utils/api/books/getters";
 import { eq } from "drizzle-orm";
 import { registerWrites } from "../utils/api/db/register";
+import { v4 } from "uuid";
 
 const app = new Hono();
 
@@ -82,10 +83,10 @@ app.put("/:id", async (ctx) => {
 
   if (Array.isArray(content)) {
     const book = content.find((book) => book.id === id);
-    content[searchKey] = value;
+
     data = content.map((x) => {
       if (x.id === id) {
-        return book;
+        return { ...book, [searchKey]: value };
       }
 
       return x;
@@ -97,15 +98,19 @@ app.put("/:id", async (ctx) => {
         content: null,
       });
 
-    await db.update(contents).set({
-      content: data,
-    });
+    const [updated] = await db
+      .update(contents)
+      .set({
+        content: data,
+      })
+      .where(eq(contents.id, contentId))
+      .returning();
 
-    await client.sync();
+    client.sync();
 
     return ctx.json({
       message: "Content updated successfully.",
-      content: book,
+      content: (updated.content as any).find((x: any) => x.id === id),
     });
   }
 
@@ -145,11 +150,16 @@ app.post("/", async (ctx) => {
     });
   }
 
+  const theData = data;
+
   if (Array.isArray(content)) {
     if (Array.isArray(data)) {
-      content.push(...data);
+      content.push(...theData);
     } else {
-      content.push(data);
+      if (!theData.id) {
+        theData.id = v4();
+      }
+      content.push(theData);
     }
 
     const [updated] = await db
@@ -161,7 +171,9 @@ app.post("/", async (ctx) => {
     await client.sync();
 
     return ctx.json({
-      content: updated.content,
+      content: Array.isArray(data)
+        ? updated.content
+        : (updated.content as any).find((x: any) => x.id === theData.id),
       message: "Content updated successfully.",
     });
   }
@@ -177,7 +189,12 @@ app.delete("/:id", async (ctx) => {
     const { id } = ctx.req.param();
     const key = ctx.req.path.split("/")[4];
 
+    const queryKey = id.split("=")[0];
+    const queryValue = id.split("=")[1];
+
     if (!id) return ctx.json({ message: "Invalid data" });
+
+    console.log(id, "this is the id");
 
     const { content, contentId } = await getBook(key);
 
@@ -186,7 +203,9 @@ app.delete("/:id", async (ctx) => {
     registerWrites(contentId);
 
     if (Array.isArray(content)) {
-      const data = content.filter((item) => item.id !== id);
+      const data = content.filter(
+        (item) => item[queryKey as keyof typeof item] !== queryValue,
+      );
 
       await db
         .update(contents)
