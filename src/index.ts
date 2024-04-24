@@ -5,7 +5,8 @@ import syncRoute from "./routes/config/sync";
 import { bearerAuth } from "hono/bearer-auth";
 import { rateLimiter } from "hono-rate-limiter";
 import typesRoutes from "./routes/config/types";
-import { timing, setMetric, startTime, endTime } from "hono/timing";
+import { timing } from "hono/timing";
+import { logger } from "hono/logger";
 
 const app = new Hono();
 
@@ -19,6 +20,7 @@ const limiter = rateLimiter({
   // store: ... , // Redis, MemoryStore, etc. See below.
 });
 
+app.use(logger());
 app.use(limiter);
 app.use("/api/v1/config/sync", bearerAuth({ token }));
 
