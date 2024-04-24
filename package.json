@@ -1,7 +1,7 @@
 {
   "scripts": {
     "dev": "bun run --hot src/index.ts",
-    "start": "bun run src/index.ts && bun run start:sync",
+    "start": "bun run start:sync && bun run src/index.ts",
     "start:sync": "bun src/scripts/sync.ts",
     "build": "bun build src/index.ts",
     "format": "prettier --write .",
