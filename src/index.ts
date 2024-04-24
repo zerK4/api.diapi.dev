@@ -5,6 +5,7 @@ import syncRoute from "./routes/config/sync";
 import { bearerAuth } from "hono/bearer-auth";
 import { rateLimiter } from "hono-rate-limiter";
 import typesRoutes from "./routes/config/types";
+import { timing, setMetric, startTime, endTime } from "hono/timing";
 
 const app = new Hono();
 
@@ -34,6 +35,7 @@ app.get("/:id", async (ctx) => {
   return ctx.text("Hello Hono!");
 });
 
+app.use(timing());
 app.use(cors());
 app.route("api/v1/books/*", booksRoutes);
 // app.route("/api/v1/auth/register", registerRoutes);

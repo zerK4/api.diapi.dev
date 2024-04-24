@@ -5,10 +5,12 @@ import { getBook, getContentById } from "../utils/api/books/getters";
 import { eq } from "drizzle-orm";
 import { registerWrites } from "../utils/api/db/register";
 import { v4 } from "uuid";
+import { timing, setMetric, startTime, endTime } from "hono/timing";
 
 const app = new Hono();
 
 app.get("/all", async (ctx) => {
+  startTime(ctx, "get-all-books");
   const { key: searchKey, value } = ctx.req.query();
   const key = ctx.req.path.split("/")[4];
 
@@ -39,12 +41,14 @@ app.get("/all", async (ctx) => {
       })
       .filter((item) => item !== null);
 
+    endTime(ctx, "get-all-books");
     return ctx.json({
       message: "Content fetched successfully.",
       content: data,
     });
   }
 
+  endTime(ctx, "get-all-books");
   return ctx.json({
     message: "Content fetched successfully.",
   });
