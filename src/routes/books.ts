@@ -5,7 +5,7 @@ import { getBook, getContentById } from "../utils/api/books/getters";
 import { eq } from "drizzle-orm";
 import { registerWrites } from "../utils/api/db/register";
 import { v4 } from "uuid";
-import { timing, setMetric, startTime, endTime } from "hono/timing";
+import { startTime, endTime } from "hono/timing";
 
 const app = new Hono();
 
@@ -83,8 +83,6 @@ app.put("/:id", async (ctx) => {
 
   if (!content || !contentId) return ctx.json({ message: "Not found" });
 
-  registerWrites(contentId);
-
   if (Array.isArray(content)) {
     const book = content.find((book) => book.id === id);
 
@@ -111,6 +109,8 @@ app.put("/:id", async (ctx) => {
       .returning();
 
     client.sync();
+
+    registerWrites(contentId);
 
     return ctx.json({
       message: "Content updated successfully.",
@@ -208,7 +208,7 @@ app.delete("/:id", async (ctx) => {
 
     if (Array.isArray(content)) {
       const data = content.filter(
-        (item) => item[queryKey as keyof typeof item] !== queryValue,
+        (item) => item[queryKey as keyof typeof item] !== queryValue
       );
 
       await db

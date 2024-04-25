@@ -5,6 +5,7 @@ import syncRoute from "./routes/config/sync";
 import { bearerAuth } from "hono/bearer-auth";
 import { rateLimiter } from "hono-rate-limiter";
 import typesRoutes from "./routes/config/types";
+import functionRoutes from "./routes/functions";
 import { timing } from "hono/timing";
 import { logger } from "hono/logger";
 
@@ -43,5 +44,6 @@ app.route("api/v1/books/*", booksRoutes);
 // app.route("/api/v1/auth/register", registerRoutes);
 app.route("/api/v1/config/sync", syncRoute);
 app.route("/api/v1/config/types", typesRoutes);
+app.route("/api/v1/functions", functionRoutes);
 
 export default app;

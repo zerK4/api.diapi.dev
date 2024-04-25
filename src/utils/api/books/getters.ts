@@ -44,8 +44,6 @@ export async function getBook(apiKey: string): Promise<{
         contentId: null,
       };
 
-    registerReads(keyContent?.content.id);
-
     const books = await db.query.contents.findFirst({
       where: eq(contents.id, keyContent.contentId),
       with: {
@@ -54,15 +52,18 @@ export async function getBook(apiKey: string): Promise<{
       },
     });
 
-    if (!books)
+    if (books) {
       return {
-        content: null,
-        contentId: null,
+        content: books.content as ContentType[],
+        contentId: books.id,
       };
+    }
+
+    registerReads(keyContent?.content.id);
 
     return {
-      content: books.content as ContentType[],
-      contentId: books.id,
+      content: null,
+      contentId: null,
     };
   } catch (error) {
     console.log(error);
