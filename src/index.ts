@@ -8,6 +8,7 @@ import typesRoutes from "./routes/config/types";
 import functionRoutes from "./routes/functions";
 import { timing } from "hono/timing";
 import { logger } from "hono/logger";
+import { registrarMiddleware } from "./middleware/registrar";
 
 const app = new Hono();
 
@@ -21,6 +22,7 @@ const limiter = rateLimiter({
   // store: ... , // Redis, MemoryStore, etc. See below.
 });
 
+app.use(registrarMiddleware);
 app.use(logger());
 app.use(limiter);
 app.use("/api/v1/config/sync", bearerAuth({ token }));

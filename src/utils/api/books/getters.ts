@@ -1,7 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "../../../db";
 import { ContentType, apiKeys, contents } from "../../../db/schema";
-import { registerReads } from "../db/register";
 
 export async function getContentById({
   bookId,
@@ -52,18 +51,16 @@ export async function getBook(apiKey: string): Promise<{
       },
     });
 
-    if (books) {
+    if (!books) {
       return {
-        content: books.content as ContentType[],
-        contentId: books.id,
+        content: null,
+        contentId: null,
       };
     }
 
-    registerReads(keyContent?.content.id);
-
     return {
-      content: null,
-      contentId: null,
+      content: books.content as ContentType[],
+      contentId: books.id,
     };
   } catch (error) {
     console.log(error);

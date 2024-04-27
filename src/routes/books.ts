@@ -3,7 +3,6 @@ import { client, db } from "../db";
 import { ContentType, apiKeys, contents } from "../db/schema";
 import { getBook, getContentById } from "../utils/api/books/getters";
 import { eq } from "drizzle-orm";
-import { registerWrites } from "../utils/api/db/register";
 import { v4 } from "uuid";
 import { startTime, endTime } from "hono/timing";
 
@@ -14,8 +13,8 @@ app.get("/all", async (ctx) => {
   const { key: searchKey, value } = ctx.req.query();
   const key = ctx.req.path.split("/")[4];
 
-  const { content } = await getBook(key);
-
+  const { content, contentId } = await getBook(key);
+  ctx.res.headers.set("Content-id", contentId || "");
   if (!content) {
     ctx.status(404);
     return ctx.json({ message: "Not found", content: null });
@@ -62,6 +61,8 @@ app.get("/:id", async (ctx) => {
     apiKey: key,
   });
 
+  ctx.res.headers.set("Content-id", id || "");
+
   if (!book) {
     return ctx.json({ message: "Not found", content: null });
   }
@@ -80,7 +81,7 @@ app.put("/:id", async (ctx) => {
   }
 
   const { content, contentId } = await getBook(key);
-
+  ctx.res.headers.set("Content-id", contentId || "");
   if (!content || !contentId) return ctx.json({ message: "Not found" });
 
   if (Array.isArray(content)) {
@@ -110,8 +111,6 @@ app.put("/:id", async (ctx) => {
 
     client.sync();
 
-    registerWrites(contentId);
-
     return ctx.json({
       message: "Content updated successfully.",
       content: (updated.content as any).find((x: any) => x.id === id),
@@ -135,7 +134,7 @@ app.post("/", async (ctx) => {
   if (!content || !contentId || !currentKey)
     return ctx.json({ message: "Not found" });
 
-  registerWrites(contentId);
+  ctx.res.headers.set("Content-id", contentId || "");
 
   if (clear) {
     const [updated] = await db
@@ -198,13 +197,10 @@ app.delete("/:id", async (ctx) => {
 
     if (!id) return ctx.json({ message: "Invalid data" });
 
-    console.log(id, "this is the id");
-
     const { content, contentId } = await getBook(key);
+    ctx.res.headers.set("Content-id", contentId || "");
 
     if (!content || !contentId) return ctx.json({ message: "Not found" });
-
-    registerWrites(contentId);
 
     if (Array.isArray(content)) {
       const data = content.filter(
